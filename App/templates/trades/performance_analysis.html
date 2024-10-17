@@ -1,0 +1,139 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+<style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
+    h1, h2 { color: #333; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    .chart-container { width: 80%; margin: 20px auto; }
+</style>
+
+<h2>Profit Performance</h2>
+<h3>By Hour</h3>
+<table>
+    <tr><th>Hour</th><th>Total Profit</th></tr>
+    {% for entry in profit_by_hour %}
+        <tr><td>{{ entry.hour|date:"Y-m-d H:i" }}</td><td>${{ entry.total_profit|floatformat:2 }}</td></tr>
+    {% endfor %}
+</table>
+<div class="chart-container">
+    <canvas id="profitByHourChart"></canvas>
+</div>
+
+<h3>By Day</h3>
+<table>
+    <tr><th>Day</th><th>Total Profit</th></tr>
+    {% for entry in profit_by_day %}
+        <tr><td>{{ entry.day|date:"Y-m-d" }}</td><td>${{ entry.total_profit|floatformat:2 }}</td></tr>
+    {% endfor %}
+</table>
+<div class="chart-container">
+    <canvas id="profitByDayChart"></canvas>
+</div>
+
+<h3>By Month</h3>
+<table>
+    <tr><th>Month</th><th>Total Profit</th></tr>
+    {% for entry in profit_by_month %}
+        <tr><td>{{ entry.month|date:"Y-m" }}</td><td>${{ entry.total_profit|floatformat:2 }}</td></tr>
+    {% endfor %}
+</table>
+<div class="chart-container">
+    <canvas id="profitByMonthChart"></canvas>
+</div>
+
+<h2>Lot Size Performance</h2>
+<h3>By Hour</h3>
+<table>
+    <tr><th>Hour</th><th>Average Lot Size</th></tr>
+    {% for entry in lot_size_by_hour %}
+        <tr><td>{{ entry.hour|date:"Y-m-d H:i" }}</td><td>{{ entry.avg_lot_size|floatformat:2 }}</td></tr>
+    {% endfor %}
+</table>
+<div class="chart-container">
+    <canvas id="lotSizeByHourChart"></canvas>
+</div>
+
+<h3>By Day</h3>
+<table>
+    <tr><th>Day</th><th>Average Lot Size</th></tr>
+    {% for entry in lot_size_by_day %}
+        <tr><td>{{ entry.day|date:"Y-m-d" }}</td><td>{{ entry.avg_lot_size|floatformat:2 }}</td></tr>
+    {% endfor %}
+</table>
+<div class="chart-container">
+    <canvas id="lotSizeByDayChart"></canvas>
+</div>
+
+<h3>By Month</h3>
+<table>
+    <tr><th>Month</th><th>Average Lot Size</th></tr>
+    {% for entry in lot_size_by_month %}
+        <tr><td>{{ entry.month|date:"Y-m" }}</td><td>{{ entry.avg_lot_size|floatformat:2 }}</td></tr>
+    {% endfor %}
+</table>
+<div class="chart-container">
+    <canvas id="lotSizeByMonthChart"></canvas>
+</div>
+
+<script>
+    function createChart(ctx, labels, data, label, type) {
+        new Chart(ctx, {
+            type: type,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: data,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Profit by Hour Chart
+    var profitByHourCtx = document.getElementById('profitByHourChart').getContext('2d');
+    var profitByHourLabels = [{% for entry in profit_by_hour %}"{{ entry.hour|date:'Y-m-d H:i' }}",{% endfor %}];
+    var profitByHourData = [{% for entry in profit_by_hour %}{{ entry.total_profit }},{% endfor %}];
+    createChart(profitByHourCtx, profitByHourLabels, profitByHourData, 'Profit by Hour', 'line');
+
+    // Profit by Day Chart
+    var profitByDayCtx = document.getElementById('profitByDayChart').getContext('2d');
+    var profitByDayLabels = [{% for entry in profit_by_day %}"{{ entry.day|date:'Y-m-d' }}",{% endfor %}];
+    var profitByDayData = [{% for entry in profit_by_day %}{{ entry.total_profit }},{% endfor %}];
+    createChart(profitByDayCtx, profitByDayLabels, profitByDayData, 'Profit by Day', 'bar');
+
+    // Profit by Month Chart
+    var profitByMonthCtx = document.getElementById('profitByMonthChart').getContext('2d');
+    var profitByMonthLabels = [{% for entry in profit_by_month %}"{{ entry.month|date:'Y-m' }}",{% endfor %}];
+    var profitByMonthData = [{% for entry in profit_by_month %}{{ entry.total_profit }},{% endfor %}];
+    createChart(profitByMonthCtx, profitByMonthLabels, profitByMonthData, 'Profit by Month', 'bar');
+
+    // Lot Size by Hour Chart
+    var lotSizeByHourCtx = document.getElementById('lotSizeByHourChart').getContext('2d');
+    var lotSizeByHourLabels = [{% for entry in lot_size_by_hour %}"{{ entry.hour|date:'Y-m-d H:i' }}",{% endfor %}];
+    var lotSizeByHourData = [{% for entry in lot_size_by_hour %}{{ entry.avg_lot_size }},{% endfor %}];
+    createChart(lotSizeByHourCtx, lotSizeByHourLabels, lotSizeByHourData, 'Average Lot Size by Hour', 'line');
+
+    // Lot Size by Day Chart
+    var lotSizeByDayCtx = document.getElementById('lotSizeByDayChart').getContext('2d');
+    var lotSizeByDayLabels = [{% for entry in lot_size_by_day %}"{{ entry.day|date:'Y-m-d' }}",{% endfor %}];
+    var lotSizeByDayData = [{% for entry in lot_size_by_day %}{{ entry.avg_lot_size }},{% endfor %}];
+    createChart(lotSizeByDayCtx, lotSizeByDayLabels, lotSizeByDayData, 'Average Lot Size by Day', 'bar');
+
+    // Lot Size by Month Chart
+    var lotSizeByMonthCtx = document.getElementById('lotSizeByMonthChart').getContext('2d');
+    var lotSizeByMonthLabels = [{% for entry in lot_size_by_month %}"{{ entry.month|date:'Y-m' }}",{% endfor %}];
+    var lotSizeByMonthData = [{% for entry in lot_size_by_month %}{{ entry.avg_lot_size }},{% endfor %}];
+    createChart(lotSizeByMonthCtx, lotSizeByMonthLabels, lotSizeByMonthData, 'Average Lot Size by Month', 'bar');
+</script>

@@ -1,0 +1,44 @@
+<div class="mb-3">
+     <label for="tradeDate">Trade Date:</label>
+        <input type="datetime-local" name="trade_date" class="form-control" value="{{ entry.trade_date|date:'Y-m-d\TH:i' }}" required>
+</div>
+<div class="mb-3">
+    <label for="journalText">Journal Text:</label>
+    <textarea name="journal_text" class="form-control">{{ entry.journal_text }}</textarea>
+</div>
+
+<div class="mb-3">
+    <label for="profit">Profit:</label>
+    <input type="number" name="profit" class="form-control" value="{{ entry.profit }}">
+</div>
+
+<div class="mb-3">
+    <label for="symbol">Symbol:</label>
+    <input type="text" name="symbol" class="form-control" value="{{ entry.symbol }}">
+</div>
+
+<div class="mb-3">
+    <label for="size">Size:</label>
+    <input type="number" name="size" class="form-control" value="{{ entry.size }}">
+</div>
+
+<!-- Show existing images with delete options -->
+<div class="mb-3">
+    <label>Images:</label>
+    <div class="row">
+        {% for image in images %}
+        <div class="col-md-3">
+            <img src="{{ image.image.url }}" class="img-thumbnail" alt="Journal Image" onclick="showFullImage('{{ image.image.url }}')">
+            <input type="checkbox" name="delete_images" value="{{ image.id }}"> Delete
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+
+<!-- Option to add more images -->
+<div class="mb-3">
+    <label for="additionalImages">Add More Images:</label>
+    <input type="file" name="additionalImages" multiple class="form-control">
+</div>

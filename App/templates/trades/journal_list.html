@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journal Entries</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+</head>
+<body>
+<div class="container mt-4">
+    <h1>Trading Journal : </h1>
+    <!-- Button to trigger the "New Journal Entry" modal -->
+    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#newJournalModal">New Journal Entry</button>
+    <button class="btn btn-primary mb-3" data-bs-toggle="modal" id="loadPerformance">Performance</button>
+
+    {% if entries %}
+        <table class="table table-responsive table-hover table-bordered border-primary-subtle">
+            <thead>
+            <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Text</th>
+                <th scope="col">Profit</th>
+                <th scope="col">Symbol</th>
+                <th scope="col">Size</th>
+                <th scope="col">Created</th>
+                <th scope="col">Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for entry in entries %}
+                <tr>
+                    <th scope="row">{{ entry.trade_date|date:"F d, Y H:i" }}</th>
+                    <th>
+                        <a href="#" class="journal-entry-link" data-entry-id="{{ entry.id }}" data-url="{% url 'journal_detail' entry.id %}" data-bs-toggle="modal" data-bs-target="#journalDetailModal">
+                            {{ entry.journal_text|truncatewords:10 }}
+                        </a>
+
+                    </th>
+                    <th>{{ entry.profit }} $</th>
+                    <th>{{ entry.symbol }}</th>
+                    <th>{{ entry.size }}</th>
+                    <th>{{ entry.created_at|date:"F d, Y H:i" }}</th>
+                    <th>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="{{ entry.id }}">Del</button>
+                    </th>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No journal entries yet. Start by creating a new entry!</p>
+    {% endif %}
+</div>
+<div class="modal fade" id="performanceModal" tabindex="-1" aria-labelledby="performanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="performanceModalLabel">Performance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="performanceContent">
+                <!-- Content will be loaded dynamically via AJAX -->
+            </div>
+            <div class="modal-footer">
+
+            </div>
+        </div>
+    </div>
+</div>
+<!-- New Journal Modal -->
+<div class="modal fade" id="newJournalModal" tabindex="-1" aria-labelledby="newJournalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="newJournalForm" method="POST">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newJournalModalLabel">New Journal Entry</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modal-body">
+                    <label for="tradeDate">Trade Date:</label>
+                    <input type="datetime-local" name="trade_date" class="form-control" required>
+
+                    <label for="journalText">Journal Text:</label>
+                    <textarea name="journal_text" class="form-control" required></textarea>
+
+                    <label for="profit">Profit:</label>
+                    <input type="number" name="profit" class="form-control" step="0.01">
+
+                    <label for="symbol">Symbol:</label>
+                    <input type="text" name="symbol" class="form-control">
+
+                    <label for="size">Size:</label>
+                    <input type="number" name="size" class="form-control" step="0.01">
+
+                    <label for="imageUpload" class="form-label">Upload Image</label>
+                    <input type="file" class="form-control" id="imageUpload" name="imageUpload" accept="image/*">
+                    <input name="create" type="hidden" value="True">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="addImageField()">Add Another Image</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Journal Detail Modal -->
+<div class="modal fade" id="journalDetailModal" tabindex="-1" aria-labelledby="journalDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="journalDetailForm" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="journalDetailModalLabel">Journal Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="journalDetailContent">
+                    <!-- Content will be loaded dynamically via AJAX -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this journal entry?
+            </div>
+            <div class="modal-footer">
+                <form id="deleteJournalForm" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="entry_id" id="deleteEntryId">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Full Image Modal with Canvas -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="position-relative d-inline-block" style="overflow: hidden">
+                    <!-- Image -->
+                    <img id="modalImage" class="img-fluid" alt="Full-size image">
+
+                    <!-- Canvas over the image -->
+                    <canvas id="imageCanvas" class="position-absolute" style="top: 0; left: 0;"></canvas>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="clearCanvasBtn">Clear Canvas</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Variables for canvas and drawing context
+    let canvas = document.getElementById('imageCanvas');
+    let ctx, painting = false;
+
+    // Function to initialize the canvas over the image
+    function showFullImage(imageUrl) {
+        const modalImage = document.getElementById('modalImage');
+        const imageCanvas = document.getElementById('imageCanvas');
+
+        // Set the image URL
+        modalImage.src = imageUrl;
+
+        // Wait for the image to load before setting canvas size
+        modalImage.onload = function () {
+            // Set the canvas size to match the image size
+            imageCanvas.width = modalImage.width;
+            imageCanvas.height = modalImage.height;
+
+            // Set CSS size if needed (optional, if you want to make the image responsive)
+            imageCanvas.style.width = modalImage.width + 'px';
+            imageCanvas.style.height = modalImage.height + 'px';
+
+            // Get the canvas context for drawing
+            ctx = imageCanvas.getContext('2d');
+            ctx.clearRect(0, 0, imageCanvas.width, imageCanvas.height); // Clear the canvas
+
+            // Handle scaling (if necessary)
+            let scaleX = imageCanvas.width / modalImage.width;
+            let scaleY = imageCanvas.height / modalImage.height;
+            ctx.scale(scaleX, scaleY);
+
+            // Display the modal
+            const imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+            imageModal.show();
+        };
+
+        // Attach event listeners for drawing on the canvas
+        imageCanvas.addEventListener('mousedown', startPainting);
+        imageCanvas.addEventListener('mouseup', stopPainting);
+        imageCanvas.addEventListener('mousemove', draw);
+    }
+
+    // Start drawing
+    function startPainting(event) {
+        painting = true;
+        draw(event);  // Start drawing immediately on mousedown
+    }
+
+    // Stop drawing
+    function stopPainting() {
+        painting = false;
+        ctx.beginPath(); // Reset the path to prevent lines between separate strokes
+    }
+
+    // Handle the actual drawing
+    function draw(event) {
+        if (!painting) return;
+
+        // Calculate mouse position relative to canvas
+        const rect = canvas.getBoundingClientRect();
+        const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+
+        // Set drawing properties
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = 'red';  // Color of the drawing
+
+        // Draw on the canvas
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+
+    // Clear the canvas when "Clear Canvas" button is clicked
+    document.getElementById('clearCanvasBtn').addEventListener('click', function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);  // Clear the canvas content
+    });
+
+    document.getElementById('loadPerformance').addEventListener('click', function(event) {
+        event.preventDefault();
+
+        const url = '/performance/';  // Adjust this to the correct URL for your view
+
+        // Perform AJAX request to load performance data
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); // Identify the request as AJAX
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                // Load the response HTML into the modal body
+                var content = document.getElementById('performanceContent');
+                content.innerHTML = xhr.responseText;
+
+                // Show the modal after loading content
+                var performanceModal = new bootstrap.Modal(document.getElementById('performanceModal'));
+                performanceModal.show();
+                var scripts = content.getElementsByTagName('script');
+                for (var i = 0; i < scripts.length; i++) {
+                    eval(scripts[i].innerHTML);  // Execute the inline script
+                }
+            } else {
+                console.error('Failed to load performance data.');
+            }
+        };
+        xhr.send();
+    });
+
+    // Handle form submission for creating a new journal entry
+    document.getElementById('newJournalForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        var formData = new FormData(this); // Collect form data
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '{% url "journal_list" %}', true); // Send request to your journal_list view
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                // Close the modal
+                var newJournalModal = document.getElementById('newJournalModal');
+                var modalInstance = bootstrap.Modal.getInstance(newJournalModal);
+                modalInstance.hide();
+
+                // Optionally, update the journal entries list here
+                // You can re-render a specific part of the page using `xhr.responseText`
+                // Example: document.getElementById('journalEntriesContainer').innerHTML = xhr.responseText;
+
+                location.reload(); // Alternatively, reload the page to show new entries
+            }
+        };
+
+        xhr.send(formData); // Send form data via AJAX
+    });
+
+    document.querySelectorAll('.journal-entry-link').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault();
+            const entryId = this.getAttribute('data-entry-id');
+            const url = `/journal-update/${entryId}/`;  // Construct the URL with the entryId
+
+            // Set the form's action attribute
+            document.getElementById('journalDetailForm').setAttribute('action', url);
+
+            // Now load the journal details via AJAX (if necessary) and open the modal
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', `/journal-detail/${entryId}/`, true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    document.getElementById('journalDetailContent').innerHTML = xhr.responseText;
+                }
+            };
+            xhr.send();
+        });
+    });
+    document.getElementById('journalDetailForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        var formData = new FormData(this); // Collect all form data including files and checkboxes
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', this.action, true); // Make sure the form action is the correct URL
+
+        xhr.onload = function () {
+            console.log(xhr.responseText);
+            if (xhr.status === 200) {
+                var response = JSON.parse(xhr.responseText);
+                if (response.status === 'success') {
+                    // Close the modal and update the page if necessary
+                    var modalInstance = bootstrap.Modal.getInstance(document.getElementById('journalDetailModal'));
+                    modalInstance.hide();
+                    location.reload();
+                    // Optionally update the journal list or UI
+                } else {
+                    console.error('Error saving journal entry:', response);
+                }
+            } else {
+                console.error('Error: ', xhr.responseText);
+            }
+        };
+
+        xhr.onerror = function() {
+            console.error("Network error occurred.");
+        };
+
+        xhr.send(formData); // Send form data via AJAX
+    });
+
+
+    document.getElementById('deleteJournalForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        var formData = new FormData(this);
+        formData.append('delete', true);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '{% url "journal_list" %}', true);
+        xhr.onload = function () {
+            window.location.href = '{% url "journal_list" %}'
+            {# set notification #}
+            if (xhr.status === 302) {
+                // Redirect to the new location
+                {#window.location.href = xhr.getResponseHeader('Location');#}
+            } else if (xhr.status === 200) {
+                try {
+                    {#var response = JSON.parse(xhr.responseText); // Parse JSON response#}
+                    {#// Update the journal entries table#}
+                    {#document.getElementById('journalEntriesContainer').innerHTML = response.html;#}
+                    {##}
+                    {#                // Hide the modal#}
+                    {#                var deleteJournalModal = document.getElementById('deleteModal');#}
+                    {#                var modalInstance = bootstrap.Modal.getInstance(deleteJournalModal);#}
+                    {#                modalInstance.hide();#}
+                } catch (e) {
+                    {#console.error("Error parsing JSON response: ", e);  // Log JSON parsing errors#}
+                }
+            } else {
+                {#console.error("AJAX request failed: ", xhr.statusText);  // Log failed request#}
+            }
+
+        };
+        xhr.onerror = function() {
+            console.error("Network error occurred.");
+        };
+        xhr.send(formData);
+    });
+    function addImageField() {
+        var div = document.getElementById('modal-body');
+
+        // Create a container div for the image input and delete button
+        var container = document.createElement("div");
+        container.className = "input-group mb-3"; // Bootstrap styling for layout
+        container.id = "image-input-container";
+        container.style.marginTop = "1rem";
+
+        // Create the file input field
+        var input = document.createElement("input");
+        input.type = "file";
+        input.name = "additionalImages";
+        input.accept = "image/*";
+        input.className = "form-control";
+        container.appendChild(input);
+
+        // Create the delete button
+        var deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "btn btn-danger ms-2"; // Bootstrap styling for button
+        deleteButton.textContent = "Delete";
+
+        // Add click event to remove the image input container
+        deleteButton.onclick = function() {
+            container.remove();
+        };
+
+        container.appendChild(deleteButton);
+
+        // Append the container to the modal body
+        div.appendChild(container);
+    }
+
+
+    // Fill the Delete Modal with entry ID
+    var deleteModal = document.getElementById('deleteModal');
+    deleteModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var entryId = button.getAttribute('data-id');
+        document.getElementById('deleteEntryId').value = entryId;
+    });
+</script>
+
+
+</body>
+</html>

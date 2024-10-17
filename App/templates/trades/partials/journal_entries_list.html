@@ -1,0 +1,30 @@
+<table class="table table-responsive table-hover table-bordered border-primary-subtle">
+    <thead>
+    <tr>
+        <th scope="col">Date</th>
+        <th scope="col">Text</th>
+        <th scope="col">Profit</th>
+        <th scope="col">Symbol</th>
+        <th scope="col">Size</th>
+        <th scope="col">Created</th>
+        <th scope="col">Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for entry in entries %}
+        <tr>
+            <th scope="row">{{ entry.trade_date|date:"F d, Y H:i" }}</th>
+            <th><a href="#" class="journal-entry-link" data-entry-id="{{ entry.id }}" data-bs-toggle="modal" data-bs-target="#journalDetailModal">
+                        {{ entry.journal_text|truncatewords:10 }}
+                            </a></th>
+            <th>{{ entry.profit }} $</th>
+            <th>{{ entry.symbol }}</th>
+            <th>{{ entry.size }}</th>
+            <th>{{ entry.created_at|date:"F d, Y H:i" }}</th>
+            <th>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="{{ entry.id }}">Del</button>
+            </th>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
